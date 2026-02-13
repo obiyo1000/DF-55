@@ -2,11 +2,20 @@
 <html>
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
   </head>
   <body>
-    <a-scene mindar-image="imageTargetSrc: ./targets.mind;" color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+    <div id="status" style="position: absolute; z-index: 999; background: white; padding: 10px;">
+      กำลังเตรียมระบบ AR... (หากค้างหน้านี้เกิน 10 วินาที แสดงว่าหาไฟล์ .mind ไม่เจอ)
+    </div>
+
+    <a-scene 
+      mindar-image="imageTargetSrc: ./targets.mind;" 
+      color-space="sRGB" 
+      renderer="colorManagement: true, physicallyCorrectLights" 
+      vr-mode-ui="enabled: false" 
+      device-orientation-permission-ui="enabled: false">
       
       <a-assets>
         <a-asset-item id="myModel" src="./model.glb"></a-asset-item>
@@ -15,9 +24,15 @@
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
       <a-entity mindar-image-target="targetIndex: 0">
-        <a-gltf-model rotation="0 0 0" position="0 0 0" scale="0.5 0.5 0.5" src="#myModel"></a-gltf-model>
+        <a-gltf-model rotation="0 0 0" position="0 0 0" scale="1 1 1" src="#myModel"></a-gltf-model>
       </a-entity>
-      
     </a-scene>
+
+    <script>
+      // ซ่อนข้อความ Loading เมื่อระบบพร้อม
+      document.querySelector('a-scene').addEventListener('renderstart', () => {
+        document.querySelector('#status').style.display = 'none';
+      });
+    </script>
   </body>
 </html>
