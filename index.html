@@ -10,7 +10,7 @@
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         background: rgba(0, 0, 0, 0.9);
         display: flex; flex-direction: column; justify-content: center; align-items: center;
-        z-index: 10000; color: white; font-family: sans-serif; text-align: center;
+        z-index: 10000; color: white; font-family: sans-serif;
       }
       #start-btn {
         padding: 15px 45px; font-size: 18px; cursor: pointer;
@@ -22,15 +22,15 @@
 
   <body>
     <div id="overlay">
-      <div style="font-size: 22px; margin-bottom: 10px;">Dymind DF-55 AR</div>
-      <p style="margin-bottom: 30px; color: #ccc; font-size: 14px;">ส่องที่การ์ดเพื่อดูโมเดล 3 มิติ<br>(แนะนำให้ใช้ Safari บน iOS)</p>
-      <button id="start-btn">START EXPERIENCE</button>
+      <div style="font-size: 20px; margin-bottom: 10px;">Dymind DF-55 AR</div>
+      <button id="start-btn">TAP TO START</button>
     </div>
 
     <a-scene 
-      mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; filterMinCF: 0.0001; filterBeta: 0.001;" 
+      mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; filterMinCF: 0.001; filterBeta: 0.01;" 
+      embedded
       color-space="sRGB" 
-      renderer="colorManagement: true, physicallyCorrectLights: false, antialias: false, precision: medium"
+      renderer="colorManagement: true, physicallyCorrectLights: false, antialias: false, precision: low"
       vr-mode-ui="enabled: false" 
       device-orientation-permission-ui="enabled: false">
       
@@ -39,7 +39,7 @@
         <audio id="mySound" src="./sound.mp3" preload="auto"></audio>
       </a-assets>
 
-      <a-camera position="0 0 0" look-controls="enabled: false" cursor="fuse: false; rayOrigin: mouse;"></a-camera>
+      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
       <a-entity id="targetEntity" mindar-image-target="targetIndex: 0">
         <a-gltf-model 
@@ -61,14 +61,16 @@
       startBtn.addEventListener('click', () => {
         overlay.style.display = 'none';
         
-        // เริ่มระบบ AR และขออนุญาตกล้อง (iOS ต้องการขั้นตอนนี้)
-        sceneEl.systems["mindar-image-system"].start();
-        
+        // บังคับให้เริ่มระบบกล้องสำหรับ iOS
+        if (sceneEl.systems["mindar-image-system"]) {
+            sceneEl.systems["mindar-image-system"].start();
+        }
+
         // ปลดล็อคเสียง
         sound.play().then(() => {
           sound.pause();
           sound.currentTime = 0;
-        }).catch(e => console.log("Audio unlock error"));
+        }).catch(e => console.log("Audio unlock failed"));
       });
 
       targetEntity.addEventListener("targetFound", () => { sound.play(); });
