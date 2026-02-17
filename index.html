@@ -5,25 +5,29 @@
     <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/dist/mindar-image-aframe.prod.js"></script>
     
     <style>
+      /* หน้าจอ Overlay เพื่อปลดล็อกสิทธิ์เสียงและกล้องบนมือถือ */
       #ui-overlay {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: #0b0b0b; display: flex; flex-direction: column;
+        background: #121212; display: flex; flex-direction: column;
         justify-content: center; align-items: center; z-index: 9999; color: white;
-        font-family: sans-serif;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       }
       #start-button {
         padding: 20px 40px; font-size: 22px; font-weight: bold;
         background: #00e676; color: black; border: none; 
-        border-radius: 50px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,230,118,0.4);
+        border-radius: 50px; cursor: pointer; 
+        box-shadow: 0 4px 20px rgba(0,230,118,0.5);
+        transition: transform 0.2s;
       }
-      .loading-text { margin-bottom: 20px; font-size: 18px; }
+      #start-button:active { transform: scale(0.95); }
+      .loading-text { margin-bottom: 25px; font-size: 20px; letter-spacing: 1px; }
     </style>
   </head>
   <body>
 
     <div id="ui-overlay">
-      <div class="loading-text">Dymind DF-55 AR</div>
-      <button id="start-button">เปิดกล้องและเริ่มรับฟัง</button>
+      <div class="loading-text">DYMIND DF-55</div>
+      <button id="start-button">เริ่มใช้งาน AR และเปิดเสียง</button>
     </div>
 
     <audio id="bgMusic" src="./sound.mp3" preload="auto" playsinline></audio>
@@ -40,10 +44,12 @@
 
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-      <a-entity mindar-image-target="targetIndex: 0">
+      <a-entity id="ar-target" mindar-image-target="targetIndex: 0">
         <a-gltf-model src="#medicalModel" 
                       rotation="0 0 0" 
-                      position="0 0 0" 
+                      /* position: ยกแกน Y ขึ้น 0.236 เมตร เพื่อให้ฐานวางพอดีบนการ์ด (ความสูง 0.472 / 2) */
+                      position="0 0.236 0" 
+                      /* scale: ขนาดจริงตามที่คุณกำหนด กว้าง 0.36m, สูง 0.472m, ลึก 0.442m */
                       scale="0.36 0.472 0.442">
         </a-gltf-model>
       </a-entity>
@@ -55,29 +61,31 @@
       const audio = document.querySelector("#bgMusic");
       const sceneEl = document.querySelector("a-scene");
 
+      // เมื่อกดปุ่ม Start
       startButton.addEventListener('click', () => {
-        // 1. ซ่อนหน้า Overlay 
         overlay.style.display = "none";
         
-        // 2. ปลดล็อกเสียงสำหรับ iOS (ต้องสั่ง play และ pause ทันทีเพื่อจองสิทธิ์)
-        audio.play();
+        // ปลดล็อก Audio Context สำหรับ iOS/Android
+        audio.play().then(() => {
+            audio.pause();
+            audio.currentTime = 0;
+        }).catch(err => console.log("Audio unlock error:", err));
         
-        // 3. เริ่มระบบ AR (กล้องจะเปิด)
+        // เริ่มระบบกล้องและ AR
         sceneEl.systems["mindar-image-system"].start();
-        
-        console.log("AR System Started for iOS/Android");
       });
 
-      // ดักฟังเหตุการณ์เมื่อเจอ Target (การ์ด) เพื่อให้เสียงเริ่มเล่นจากจุดเริ่มต้น
-      const targetEntity = document.querySelector('[mindar-image-target]');
+      // ควบคุมเสียงตามการสแกน
+      const targetEntity = document.querySelector('#ar-target');
+      
       targetEntity.addEventListener("targetFound", event => {
-        console.log("Target Found: Playing Audio");
-        audio.currentTime = 0; // เริ่มเสียงใหม่ทุกครั้งที่เจอการ์ด
+        console.log("สแกนเจอเครื่อง DF-55: กำลังเล่นเสียงบรรยาย");
+        audio.currentTime = 0; 
         audio.play();
       });
 
-      // หยุดเสียงเมื่อหาการ์ดไม่เจอ (ตัวเลือกเสริม)
       targetEntity.addEventListener("targetLost", event => {
+        console.log("ไม่พบการ์ด: หยุดเสียง");
         audio.pause();
       });
     </script>
