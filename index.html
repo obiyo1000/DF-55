@@ -1,93 +1,78 @@
+<!DOCTYPE html>
 <html>
   <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, minimum-scale=1, maximum-scale=1" />
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
     
     <style>
-      /* หน้าจอ Overlay เพื่อปลดล็อกสิทธิ์เสียงและกล้องบนมือถือ */
-      #ui-overlay {
+      #overlay {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: #121212; display: flex; flex-direction: column;
-        justify-content: center; align-items: center; z-index: 9999; color: white;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: rgba(0, 0, 0, 0.9);
+        display: flex; flex-direction: column; justify-content: center; align-items: center;
+        z-index: 10000; color: white; font-family: sans-serif; text-align: center;
       }
-      #start-button {
-        padding: 20px 40px; font-size: 22px; font-weight: bold;
-        background: #00e676; color: black; border: none; 
-        border-radius: 50px; cursor: pointer; 
-        box-shadow: 0 4px 20px rgba(0,230,118,0.5);
-        transition: transform 0.2s;
+      #start-btn {
+        padding: 15px 45px; font-size: 18px; cursor: pointer;
+        background-color: #007bff; color: white; border: none;
+        border-radius: 50px; font-weight: bold;
       }
-      #start-button:active { transform: scale(0.95); }
-      .loading-text { margin-bottom: 25px; font-size: 20px; letter-spacing: 1px; }
     </style>
   </head>
-  <body>
 
-    <div id="ui-overlay">
-      <div class="loading-text">DYMIND DF-55</div>
-      <button id="start-button">เริ่มใช้งาน AR และเปิดเสียง</button>
+  <body>
+    <div id="overlay">
+      <div style="font-size: 22px; margin-bottom: 10px;">Dymind DF-55 AR</div>
+      <p style="margin-bottom: 30px; color: #ccc; font-size: 14px;">ส่องที่การ์ดเพื่อดูโมเดล 3 มิติ<br>(แนะนำให้ใช้ Safari บน iOS)</p>
+      <button id="start-btn">START EXPERIENCE</button>
     </div>
 
-    <audio id="bgMusic" src="./sound.mp3" preload="auto" playsinline></audio>
-
-    <a-scene mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiLoading: no; uiError: no; uiScanning: no;" 
-             color-space="sRGB" 
-             renderer="colorManagement: true, physicallyCorrectLights: true" 
-             vr-mode-ui="enabled: false" 
-             device-orientation-permission-ui="enabled: false">
+    <a-scene 
+      mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; filterMinCF: 0.0001; filterBeta: 0.001;" 
+      color-space="sRGB" 
+      renderer="colorManagement: true, physicallyCorrectLights: false, antialias: false, precision: medium"
+      vr-mode-ui="enabled: false" 
+      device-orientation-permission-ui="enabled: false">
       
       <a-assets>
-        <a-asset-item id="medicalModel" src="./model.glb"></a-asset-item>
+        <a-asset-item id="myModel" src="./model.glb"></a-asset-item>
+        <audio id="mySound" src="./sound.mp3" preload="auto"></audio>
       </a-assets>
 
-      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+      <a-camera position="0 0 0" look-controls="enabled: false" cursor="fuse: false; rayOrigin: mouse;"></a-camera>
 
-      <a-entity id="ar-target" mindar-image-target="targetIndex: 0">
-        <a-gltf-model src="#medicalModel" 
-                      rotation="0 0 0" 
-                      /* position: ยกแกน Y ขึ้น 0.236 เมตร เพื่อให้ฐานวางพอดีบนการ์ด (ความสูง 0.472 / 2) */
-                      position="0 0.236 0" 
-                      /* scale: ขนาดจริงตามที่คุณกำหนด กว้าง 0.36m, สูง 0.472m, ลึก 0.442m */
-                      scale="0.36 0.472 0.442">
+      <a-entity id="targetEntity" mindar-image-target="targetIndex: 0">
+        <a-gltf-model 
+          src="#myModel" 
+          position="0 0.236 0" 
+          rotation="0 0 0" 
+          scale="0.36 0.472 0.442">
         </a-gltf-model>
       </a-entity>
     </a-scene>
 
     <script>
-      const startButton = document.querySelector("#start-button");
-      const overlay = document.querySelector("#ui-overlay");
-      const audio = document.querySelector("#bgMusic");
-      const sceneEl = document.querySelector("a-scene");
+      const sceneEl = document.querySelector('a-scene');
+      const targetEntity = document.querySelector('#targetEntity');
+      const sound = document.querySelector('#mySound');
+      const startBtn = document.querySelector('#start-btn');
+      const overlay = document.querySelector('#overlay');
 
-      // เมื่อกดปุ่ม Start
-      startButton.addEventListener('click', () => {
-        overlay.style.display = "none";
+      startBtn.addEventListener('click', () => {
+        overlay.style.display = 'none';
         
-        // ปลดล็อก Audio Context สำหรับ iOS/Android
-        audio.play().then(() => {
-            audio.pause();
-            audio.currentTime = 0;
-        }).catch(err => console.log("Audio unlock error:", err));
-        
-        // เริ่มระบบกล้องและ AR
+        // เริ่มระบบ AR และขออนุญาตกล้อง (iOS ต้องการขั้นตอนนี้)
         sceneEl.systems["mindar-image-system"].start();
+        
+        // ปลดล็อคเสียง
+        sound.play().then(() => {
+          sound.pause();
+          sound.currentTime = 0;
+        }).catch(e => console.log("Audio unlock error"));
       });
 
-      // ควบคุมเสียงตามการสแกน
-      const targetEntity = document.querySelector('#ar-target');
-      
-      targetEntity.addEventListener("targetFound", event => {
-        console.log("สแกนเจอเครื่อง DF-55: กำลังเล่นเสียงบรรยาย");
-        audio.currentTime = 0; 
-        audio.play();
-      });
-
-      targetEntity.addEventListener("targetLost", event => {
-        console.log("ไม่พบการ์ด: หยุดเสียง");
-        audio.pause();
-      });
+      targetEntity.addEventListener("targetFound", () => { sound.play(); });
+      targetEntity.addEventListener("targetLost", () => { sound.pause(); });
     </script>
   </body>
 </html>
